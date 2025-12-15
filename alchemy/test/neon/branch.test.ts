@@ -108,7 +108,17 @@ describe("NeonBranch Resource", () => {
       expect(adoptedBranch.endpoints).toEqual(
         expect.arrayContaining(
           originalBranch?.endpoints.map((endpoint) =>
-            expect.objectContaining({ id: endpoint.id }),
+            expect.objectContaining({
+              id: endpoint.id,
+              autoscaling_limit_max_cu: endpoint.autoscaling_limit_max_cu,
+              autoscaling_limit_min_cu: endpoint.autoscaling_limit_min_cu,
+              pooler_enabled: endpoint.pooler_enabled,
+              pooler_mode: endpoint.pooler_mode,
+              disabled: endpoint.disabled,
+              passwordless_access: endpoint.passwordless_access,
+              suspend_timeout_seconds: endpoint.suspend_timeout_seconds,
+              region_id: endpoint.region_id,
+            }),
           ),
         ),
       );

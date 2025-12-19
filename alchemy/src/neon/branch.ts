@@ -306,11 +306,20 @@ async function fetchBranch(
     },
   });
 
-  const branch = branchList.data?.branches.find((b) => b.name === props.name);
+  const branchesMatchingName =
+    branchList.data?.branches.filter((b) => b.name === props.name) ?? [];
 
-  if (!branch) {
+  if (branchesMatchingName.length === 0) {
     throw new NeonBranchNotFound(props.name);
   }
+
+  if (branchesMatchingName.length > 1) {
+    throw new Error(
+      `Multiple branches found with name "${props.name}". Name must be unique when adopting a branch.`,
+    );
+  }
+
+  const branch = branchesMatchingName[0];
 
   const databases = await api.listProjectBranchDatabases({
     path: {

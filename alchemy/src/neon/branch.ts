@@ -188,7 +188,7 @@ export const NeonBranch = Resource(
         return this.destroy();
       }
       case "create": {
-        if (props.adopt) {
+        if (this.scope.adopt || props.adopt) {
           try {
             return await fetchBranch(api, { ...props, projectId, name });
           } catch (error) {

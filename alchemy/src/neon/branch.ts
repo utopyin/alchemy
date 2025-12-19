@@ -298,16 +298,30 @@ async function fetchBranch(
   api: NeonClient,
   props: NeonBranchProps & { name: string; projectId: string },
 ): Promise<NeonBranch> {
-  const branchList = await api.listProjectBranches({
+  const branchList: neon.Branch[] = [];
+
+  let branchesResponse = await api.listProjectBranches({
     throwOnError: false,
     path: { project_id: props.projectId },
     query: {
       search: props.name,
     },
   });
+  branchList.push(...(branchesResponse.data?.branches ?? []));
 
-  const branchesMatchingName =
-    branchList.data?.branches.filter((b) => b.name === props.name) ?? [];
+  while (branchesResponse.data?.pagination?.next) {
+    branchesResponse = await api.listProjectBranches({
+      throwOnError: false,
+      path: { project_id: props.projectId },
+      query: {
+        search: props.name,
+        cursor: branchesResponse.data.pagination.next,
+      },
+    });
+    branchList.push(...(branchesResponse.data?.branches ?? []));
+  }
+
+  const branchesMatchingName = branchList.filter((b) => b.name === props.name);
 
   if (branchesMatchingName.length === 0) {
     throw new NeonBranchNotFound(props.name);

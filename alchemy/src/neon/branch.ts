@@ -301,7 +301,6 @@ async function fetchBranch(
   const branchList: neon.Branch[] = [];
 
   let branchesResponse = await api.listProjectBranches({
-    throwOnError: false,
     path: { project_id: props.projectId },
     query: {
       search: props.name,
@@ -311,7 +310,6 @@ async function fetchBranch(
 
   while (branchesResponse.data?.pagination?.next) {
     branchesResponse = await api.listProjectBranches({
-      throwOnError: false,
       path: { project_id: props.projectId },
       query: {
         search: props.name,

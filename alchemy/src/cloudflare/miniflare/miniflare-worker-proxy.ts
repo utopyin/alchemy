@@ -35,7 +35,9 @@ export async function createMiniflareWorkerProxy(options: {
       const response = await handleFetch(req, res);
       writeMiniflareResponseToNode(response, res);
     } catch (error) {
-      console.error(error);
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        console.error(error);
+      }
       const response = MiniflareWorkerProxyError.fromUnknown(error).toResponse(
         options.mode,
       );

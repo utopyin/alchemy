@@ -32,7 +32,7 @@ export async function createMiniflareWorkerProxy(options: {
 
   server.on("request", async (req, res) => {
     try {
-      const response = await handleFetch(req);
+      const response = await handleFetch(req, res);
       writeMiniflareResponseToNode(response, res);
     } catch (error) {
       console.error(error);
@@ -45,6 +45,7 @@ export async function createMiniflareWorkerProxy(options: {
 
   const handleFetch = async (
     req: http.IncomingMessage,
+    res: http.ServerResponse,
   ): Promise<miniflare.Response> => {
     const info = parseIncomingMessage(req);
     options.transformRequest?.(info);
@@ -60,12 +61,14 @@ export async function createMiniflareWorkerProxy(options: {
       info.url.pathname = "/cdn-cgi/handler/scheduled";
     }
 
+    const signal = getDisconnectSignal(req, res);
     const request = new miniflare.Request(info.url, {
       method: info.method,
       headers: info.headers,
       body: info.body,
       redirect: info.redirect,
       duplex: info.duplex,
+      signal,
     });
     return await options.miniflare.dispatchFetch(request);
   };
@@ -112,6 +115,46 @@ export async function createMiniflareWorkerProxy(options: {
       server.close();
     },
   };
+}
+
+/**
+ * Creates an abort signal that is triggered when the downstream client
+ * disconnects before the response is fully written.
+ *
+ * This signal should be forwarded to Miniflare dispatch so Worker `req.signal`
+ * listeners can observe local client cancellation.
+ */
+function getDisconnectSignal(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): AbortSignal {
+  const controller = new AbortController();
+  const onAbort = () => {
+    if (!controller.signal.aborted) {
+      controller.abort();
+    }
+    cleanup();
+  };
+  const onClose = () => {
+    if (!res.writableEnded) {
+      onAbort();
+      return;
+    }
+    cleanup();
+  };
+  const cleanup = () => {
+    req.off("aborted", onAbort);
+    req.socket?.off("close", onClose);
+    res.off("close", onClose);
+    res.off("finish", cleanup);
+  };
+
+  req.on("aborted", onAbort);
+  req.socket?.on("close", onClose);
+  res.on("close", onClose);
+  res.on("finish", cleanup);
+
+  return controller.signal;
 }
 
 /**

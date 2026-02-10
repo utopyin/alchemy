@@ -1,0 +1,21 @@
+{
+  "name": "cloudflare-worker-request-abort",
+  "version": "0.0.0",
+  "description": "Minimal reproduction for request abort signal in local Cloudflare Worker dev mode",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "deploy": "alchemy deploy --profile test --env-file ../../.env",
+    "destroy": "alchemy destroy --profile test --env-file ../../.env",
+    "dev": "alchemy dev --profile test --env-file ../../.env",
+    "repro": "bun run repro.abort.ts",
+    "wrangler:dev": "wrangler dev --config wrangler.jsonc"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@types/node": "^24.0.1",
+    "alchemy": "workspace:*",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}
